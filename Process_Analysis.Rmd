@@ -5,16 +5,18 @@ output:
   html_notebook: default
 ---
 
-This is R Notebook present a process analysis of 746 completed, fully validated, and archived projects in the HOT Tasking Manager (HOT-TM) over the past two years.
-The process is analised from four perspectives: 
+This is R Notebook present a process analysis of 746 completed, fully validated, and archived projects in the HOT Tasking Manager (HOT-TM) over the past two years. The process is analised from four perspectives:
 
-1) [Control flow](#controlflow)
-2) [Time](#time)
-3) [Organisation](#organisation)
-4) [Outcome](#outcome)
+1)  [Control flow](#controlflow)
+2)  [Time](#time)
+3)  [Organisation](#organisation)
+4)  [Outcome](#outcome)
 
 Process discovery was performed using bupaR, a suite of open-source R packages for business process data analysis.
+
 ```{r}
+# Import required libraries
+suppressWarnings({
 #install.packages("reshape2")
 #install.packages("gt")
 library(bupaverse)
@@ -23,16 +25,24 @@ library(gt)
 library(scales)
 library(readr)
 library(dplyr)
+library(magrittr)
+library(ggplot2)
+library(Hmisc)
+library(gamlss)
+})
 ```
+
 # Read event data
 
-The log containing only initial tasks ("initial_tasks.csv") is used in  1) Control flow, 2) Time, 3) Organisation sections, where a clean view of the process is required.
+The log containing only initial tasks ("initial_tasks.csv") is used in 1) Control flow, 2) Time, 3) Organisation sections, where a clean view of the process is required.
+
 ```{r}
 event_log_df <- read.csv("initial_tasks.csv", stringsAsFactors = FALSE, sep = ",")
 event_log_df <- event_log_df %>%
   convert_timestamps(columns = c("start", "complete"), format = ymd_hms) %>%
   activitylog(case_id = "taskId", activity_id = "action", resource_id = "actionBy", timestamps = c("start", "complete"))
 ```
+
 ```{r}
 head(event_log_df)
 ```
@@ -40,18 +50,25 @@ head(event_log_df)
 # Control flow {#controlflow}
 
 Absolute frequency of activities in the eventlog.
+
 ```{r}
 event_log_df %>% activity_frequency("activity")
 ```
-Activity presence shows in what percentage of cases an activity is present. 
+
+Activity presence shows in what percentage of cases an activity is present.
+
 ```{r}
 event_log_df %>% activity_presence()
 ```
+
 The start of cases can be described using the start_activities function.
+
 ```{r}
 event_log_df %>% start_activities("activity")
 ```
+
 The end_activities function describes the end of cases
+
 ```{r}
 event_log_df %>% end_activities("activity")
 ```
@@ -64,6 +81,7 @@ tmp %>%  process_map(frequency("absolute"))
 ```
 
 trace_explorer() with coverage argument n_traces = 3 shows the 3 most frequent in the event log.
+
 ```{r}
 event_log_df %>%    trace_explorer(n_traces = 3, show_labels = FALSE, coverage_labels = c("relative"))
 ```
@@ -71,11 +89,14 @@ event_log_df %>%    trace_explorer(n_traces = 3, show_labels = FALSE, coverage_l
 # Time {#time}
 
 In the temporal process map, the value of nodes and edges represent the median duration in days of activities and waiting times.
+
 ```{r}
 tmp1 <- tmp
 tmp1 %>%  process_map(performance(median, "days"))
 ```
+
 Timestamps are properly formatted for time calculations
+
 ```{r}
 event_log_df <- event_log_df %>% convert_timestamps(columns = c("start", "complete"), format = ymd_hms)
 event_log_df$time_diff=as.numeric(event_log_df$complete-event_log_df$start)
@@ -85,6 +106,7 @@ task_duration <- task_duration[,c("taskId","duration")]
 ```
 
 We calculated the relative time devoted for mapping activities ('LOCKED_FOR_MAPPING', 'AUTO_UNLOCKED_FOR_MAPPING') and validation activities ('LOCKED_FOR_VALIDATION','AUTO_UNLOCKED_FOR_VALIDATION') per case expressed as percentage of total case duration. The remaining time is considered idle.
+
 ```{r}
 mapping_duration <- filter(event_log_df, action == 'LOCKED_FOR_MAPPING' | action == 'AUTO_UNLOCKED_FOR_MAPPING') %>%  group_by(taskId) %>% summarise(mapping = sum(time_diff))
 validation_duration <- filter(event_log_df, action == 'LOCKED_FOR_VALIDATION' | action == 'AUTO_UNLOCKED_FOR_VALIDATION') %>%  group_by(taskId) %>% summarise(validation = sum(time_diff))
@@ -95,38 +117,51 @@ durations$validation_per=durations$validation/durations$duration*100
 durations$service=durations$mapping_per+durations$validation_per
 durations$iddle_per=100-durations$mapping_per-durations$validation_per
 ```
+
 Median % of iddle time per case
+
 ```{r}
 median(durations$iddle_per, na.rm = TRUE )
 ```
+
 Median % of mapping and validation time per case
+
 ```{r}
 median(durations$service, na.rm = TRUE )
 ```
+
 Median % of mapping time per case
+
 ```{r}
 median(durations$mapping_per, na.rm = TRUE )
 ```
+
 Median % of validation time per case
+
 ```{r}
 median(durations$validation_per, na.rm = TRUE )
 ```
 
 # Organisation {#organisation}
 
-The contributor profile is added to the event log to calculate the relative frequency with which contributors according to their mapping level execute each type of activity.
+The contributor profile ("contributors.csv") is added to the event log to calculate the relative frequency with which contributors according to their mapping level execute each type of activity.
+
 ```{r}
 contributors <- read.csv("contributors.csv", stringsAsFactors = FALSE, sep = ",")
 event_log_df <- merge(event_log_df, contributors, by.x = "actionBy", by.y = "username")
 head(event_log_df)
 ```
-Composition of the total number of contributors of the analysed projects according to their mapping level. 
+
+Composition of the total number of contributors of the analysed projects according to their mapping level.
+
 ```{r}
 mappingLevel <- event_log_df %>%  group_by(mappingLevel) %>% summarise(count = n_distinct(actionBy))
 mappingLevel$percentage <- round(mappingLevel$count/sum(mappingLevel$count)*100,1)
 mappingLevel
 ```
+
 Breakdown of status execution frequency per mapping level.
+
 ```{r}
 data_pivot <- dcast(event_log_df, action ~ mappingLevel,value.var = "taskId", length)
 data_pivot$sum <-  data_pivot$ADVANCED + data_pivot$BEGINNER + data_pivot$INTERMEDIATE
@@ -138,3 +173,58 @@ data_pivot[c("action","ADVANCEDper","BEGINNERper","INTERMEDIATEper")] %>% gt() %
 
 # Outcome {#outcome}
 
+The regression.csv file contains the total list of tasks with columns describing either the absolute frequency of executions of each type of activity ("activityname") or a binary flag (1/0) indicating whether or not the activity was executed ("activityname1") on that task.
+
+```{r}
+regression <- read.csv("regression.csv", stringsAsFactors = FALSE, sep = ",")
+regression$projId=as.character(regression$projId)
+regression$percentage_area_covered_by_building = regression$percentage_area_covered_by_building / 100
+#A few records have insignificant negative values attributed to rounding
+regression$percentage_area_covered_by_building[regression$percentage_area_covered_by_building < 0] <- 0
+regression = na.omit(regression)
+```
+
+Regression coefficients from the [GAMLSS-BEZI](https://www.rdocumentation.org/packages/gamlss.dist/versions/6.1-1/topics/BEZI) model
+
+```{r}
+model <- gamlss(percentage_area_covered_by_building ~ splits1 + invalidations1 + locked_for_mappings + badimagery1 + area_sqm + difficulty,  family = BEZI, data = regression, trace = F)
+summary(model)
+```
+
+Dropping model to single model terms
+
+```{r}
+drop1(model, parallel = "multicore", ncpus = 4)
+```
+
+Describe percentage_area_covered_by_building for all projects
+
+```{r}
+regression$percentage_area_covered_by_building = regression$percentage_area_covered_by_building * 100
+describe(regression$percentage_area_covered_by_building)
+sd(regression$percentage_area_covered_by_building, na.rm=TRUE)
+```
+
+Display box-plot of percentage_area_covered_by_building for all projects
+
+```{r}
+p<-ggplot(regression, aes(y=percentage_area_covered_by_building)) +
+  geom_boxplot()
+p + theme_classic()
+```
+
+Describe percentage_area_covered_by_building by split category
+
+```{r}
+regression %>% group_by(splits1) %>% summarise(projId = n())
+tapply(regression$percentage_area_covered_by_building, regression$splits1, summary)
+```
+
+Display box-plot of percentage_area_covered_by_building by split category
+
+```{r}
+regression$splits1=as.character(regression$splits1)
+p<-ggplot(regression, aes(x=splits1, y=percentage_area_covered_by_building, color=splits1)) +
+  geom_boxplot()
+p + theme_classic()
+```
