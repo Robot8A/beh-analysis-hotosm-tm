@@ -15,7 +15,14 @@ The process is analised from four perspectives:
 
 Process discovery was performed using bupaR, a suite of open-source R packages for business process data analysis.
 ```{r}
+#install.packages("reshape2")
+#install.packages("gt")
 library(bupaverse)
+library(reshape2)
+library(gt)
+library(scales)
+library(readr)
+library(dplyr)
 ```
 # Read event data
 
@@ -25,6 +32,8 @@ event_log_df <- read.csv("initial_tasks.csv", stringsAsFactors = FALSE, sep = ",
 event_log_df <- event_log_df %>%
   convert_timestamps(columns = c("start", "complete"), format = ymd_hms) %>%
   activitylog(case_id = "taskId", activity_id = "action", resource_id = "actionBy", timestamps = c("start", "complete"))
+```
+```{r}
 head(event_log_df)
 ```
 
@@ -105,7 +114,27 @@ median(durations$validation_per, na.rm = TRUE )
 
 # Organisation {#organisation}
 
-
+The contributor profile is added to the event log to calculate the relative frequency with which contributors according to their mapping level execute each type of activity.
+```{r}
+contributors <- read.csv("contributors.csv", stringsAsFactors = FALSE, sep = ",")
+event_log_df <- merge(event_log_df, contributors, by.x = "actionBy", by.y = "username")
+head(event_log_df)
+```
+Composition of the total number of contributors of the analysed projects according to their mapping level. 
+```{r}
+mappingLevel <- event_log_df %>%  group_by(mappingLevel) %>% summarise(count = n_distinct(actionBy))
+mappingLevel$percentage <- round(mappingLevel$count/sum(mappingLevel$count)*100,1)
+mappingLevel
+```
+Breakdown of status execution frequency per mapping level.
+```{r}
+data_pivot <- dcast(event_log_df, action ~ mappingLevel,value.var = "taskId", length)
+data_pivot$sum <-  data_pivot$ADVANCED + data_pivot$BEGINNER + data_pivot$INTERMEDIATE
+data_pivot$ADVANCEDper <- round(data_pivot$ADVANCED/data_pivot$sum*100,1)
+data_pivot$BEGINNERper <- round(data_pivot$BEGINNER/data_pivot$sum*100,1)
+data_pivot$INTERMEDIATEper <- round(data_pivot$INTERMEDIATE/data_pivot$sum*100,1)
+data_pivot[c("action","ADVANCEDper","BEGINNERper","INTERMEDIATEper")] %>% gt() %>%  data_color(columns = 2:4, colors = col_numeric(palette = c("white","darkgreen"),domain = c(0,100)))
+```
 
 # Outcome {#outcome}
 
