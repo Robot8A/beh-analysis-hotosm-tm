@@ -7,6 +7,7 @@ output:
 
 This is R Notebook present a process analysis of 746 completed, fully validated, and archived projects in the HOT Tasking Manager (HOT-TM) over the past two years. The process is analised from four perspectives:
 
+0)  [Project profiling](#projects)
 1)  [Control flow](#controlflow)
 2)  [Time](#time)
 3)  [Organisation](#organisation)
@@ -46,8 +47,27 @@ event_log_df <- event_log_df %>%
 ```{r}
 head(event_log_df)
 ```
+# 0. Project profiling {#projects}
 
-# Control flow {#controlflow}
+Read list of projects to be analised
+```{r}
+projects <- read.csv("projects.csv", stringsAsFactors = FALSE, sep = ",")
+head(projects)
+```
+
+Frequency of projects according to their level of difficulty
+```{r}
+difficulty <- projects %>% count(difficulty) %>% mutate(percentage = n/sum(n)*100)
+difficulty[order(difficulty$n, decreasing = TRUE),]
+```
+
+Frequency of projects according to their hubs
+```{r}
+hub <- projects %>% count(region) %>% mutate(percentage = n/sum(n)*100)
+hub[order(hub$n, decreasing = TRUE),]
+```
+
+# 1. Control flow {#controlflow}
 
 Absolute frequency of activities in the eventlog.
 
@@ -86,7 +106,7 @@ trace_explorer() with coverage argument n_traces = 3 shows the 3 most frequent i
 event_log_df %>%    trace_explorer(n_traces = 3, show_labels = FALSE, coverage_labels = c("relative"))
 ```
 
-# Time {#time}
+# 2. Time {#time}
 
 In the temporal process map, the value of nodes and edges represent the median duration in days of activities and waiting times.
 
@@ -142,7 +162,7 @@ Median % of validation time per case
 median(durations$validation_per, na.rm = TRUE )
 ```
 
-# Organisation {#organisation}
+# 3. Organisation {#organisation}
 
 The contributor profile ("contributors.csv") is added to the event log to calculate the relative frequency with which contributors according to their mapping level execute each type of activity.
 
@@ -171,7 +191,7 @@ data_pivot$INTERMEDIATEper <- round(data_pivot$INTERMEDIATE/data_pivot$sum*100,1
 data_pivot[c("action","ADVANCEDper","BEGINNERper","INTERMEDIATEper")] %>% gt() %>%  data_color(columns = 2:4, colors = col_numeric(palette = c("white","darkgreen"),domain = c(0,100)))
 ```
 
-# Outcome {#outcome}
+# 4. Outcome {#outcome}
 
 The regression.csv file contains the total list of tasks with columns describing either the absolute frequency of executions of each type of activity ("activityname") or a binary flag (1/0) indicating whether or not the activity was executed ("activityname1") on that task.
 
