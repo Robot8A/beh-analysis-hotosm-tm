@@ -15,16 +15,16 @@ C4Component
 
     Component_Ext(fil, "Intermediate files")
  
-    BiRel(hot, dow, "API calls", "JSON/HTTPS")
-    UpdateRelStyle(hot, dow, $offsetX="-80", $offsetY="20")
+    BiRel(hot, dow, "API calls<br>/users/queries/<username>/<br>/projects/<proj_id>/tasks/<br>/projects/<proj_id>/activities/<br>/projects/<proj_id>/statistics/<br>/projects/<br><br><br><br><br>", "JSON/HTTPS")
+    UpdateRelStyle(hot, dow, $offsetX="-200", $offsetY="20")
 
-    BiRel(bla, dow, "API calls", "JSON/HTTPS")
+    BiRel(bla, dow, "API calls<br>/osm/extract/<br>", "JSON/HTTPS")
     UpdateRelStyle(bla, dow, $offsetX="-110", $offsetY="20")
 
     BiRel(fil, dow, "")
     BiRel(fil, bud, "")
     BiRel(fil, dpp, "")
-    BiRel(fil, pan, "")
+    Rel(fil, pan, "initial_tasks.csv<br>contributors.csv<br>regression.csv")
 ```
 
 ```mermaid
