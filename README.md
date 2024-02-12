@@ -1,7 +1,7 @@
 # beh-analysis-hotosm-tm
 ```mermaid
 C4Component
-    title Component diagram for Process Analysis in Humanitarian VGI
+    title Component diagram
 
     System_Ext(hot, "HOT-TM API")
     System_Ext(bla, "Bunting Labs API")
@@ -25,6 +25,16 @@ C4Component
     BiRel(fil, bud, "")
     BiRel(fil, dpp, "")
     BiRel(fil, pan, "")
+```
+
+```mermaid
+---
+title: Flow diagram
+---
+flowchart LR
+    download_data.ipynb-->building_density.ipynb;
+    building_density.ipynb-->Data_preprocessing.ipynb;
+    Data_preprocessing.ipynb-->Process_Analysis.Rmd;
 ```
 
 
