@@ -51,7 +51,7 @@ To execute Jupyter Notebooks appropriate Python IDEs should be used (e.g. Jupyte
 ### Jupyter Notebooks
 * Google Colab release 2023-11-27 (Colab Pro high RAM runtime needed for building_density.ipynb in a few HOT projects with a big area, the regular free runtime is good for every other case)
 * Python 3.10.12
-*pandas 1.5.3
+* pandas 1.5.3
 * geopandas 0.13.2
 * numpy 1.25.2
 * requests 2.31.0
