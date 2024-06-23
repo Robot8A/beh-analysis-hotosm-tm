@@ -84,6 +84,11 @@ R packages and versions
 ## License
 [GPL-3.0 license](LICENSE)
 
+## Paper
+[![DOI](https://zenodo.org/badge/DOI/10.5194/agile-giss-5-5-2024.svg)](https://doi.org/10.5194/agile-giss-5-5-2024)
+
+Read the paper related to this code: ["Process Analysis in Humanitarian Voluntary Geographic Information: the case of the HOT Tasking Manager"](https://agile-giss.copernicus.org/articles/5/5/2024/)
+
 ## Acknowledgements
 <img align="left" src="eu_flag.svg" alt="EU Flag" width="150px">
 This project has received funding from the European Union’s Horizon 2020 research and innovation programme under the Marie Skłodowska-Curie grant agreement No 955569.
